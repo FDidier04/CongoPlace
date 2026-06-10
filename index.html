@@ -49,7 +49,7 @@
           </a>
           <button class="account-link" type="button" data-open-account>
             <span class="avatar" id="accountAvatar">?</span>
-            <span id="accountName">Cr&eacute;er un compte</span>
+            <span id="accountName">Se connecter</span>
           </button>
         </nav>
       </div>
@@ -317,11 +317,30 @@
 
     <dialog class="modal" id="accountModal">
       <button class="icon-btn modal-close" data-close-account aria-label="Fermer">x</button>
-      <form class="sell-form account-form" id="accountForm">
+      <div class="account-panel">
         <div>
           <p class="eyebrow">Compte CongoPlace</p>
-          <h2>Cr&eacute;er un compte</h2>
+          <h2 id="accountTitle">Se connecter</h2>
         </div>
+
+        <div class="account-tabs" role="tablist" aria-label="Compte">
+          <button class="is-active" type="button" data-account-mode="login">Se connecter</button>
+          <button type="button" data-account-mode="register">Cr&eacute;er un compte</button>
+        </div>
+
+        <form class="sell-form account-form is-active" id="loginForm">
+          <label class="field">
+            <span>Email</span>
+            <input name="email" required type="email" placeholder="votre@email.com" />
+          </label>
+          <label class="field">
+            <span>Mot de passe</span>
+            <input name="password" required type="password" minlength="6" placeholder="Votre mot de passe" />
+          </label>
+          <button class="post-btn" type="submit">Se connecter</button>
+        </form>
+
+      <form class="sell-form account-form" id="accountForm">
         <div class="form-row">
           <label class="field">
             <span>Pr&eacute;nom</span>
@@ -353,8 +372,11 @@
           <span>J'accepte les conditions d'utilisation</span>
         </label>
         <button class="post-btn" type="submit">Cr&eacute;er mon compte</button>
-        <p class="form-note" id="accountStatus" role="status"></p>
       </form>
+
+        <button class="ghost-btn logout-btn" id="logoutBtn" type="button" hidden>Se d&eacute;connecter</button>
+        <p class="form-note" id="accountStatus" role="status"></p>
+      </div>
     </dialog>
 
     <script src="app.js"></script>

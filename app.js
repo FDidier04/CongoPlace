@@ -119,7 +119,8 @@ const seedListings = [
 
 let listings = loadListings();
 let favorites = JSON.parse(localStorage.getItem("congoplace:favorites") || "[]");
-let account = JSON.parse(localStorage.getItem("congoplace:account") || "null");
+let accounts = loadAccounts();
+let account = JSON.parse(localStorage.getItem("congoplace:currentAccount") || "null");
 
 const els = {
   categoryInput: document.querySelector("#categoryInput"),
@@ -142,8 +143,11 @@ const els = {
   accountName: document.querySelector("#accountName"),
   accountCity: document.querySelector("#accountCity"),
   accountModal: document.querySelector("#accountModal"),
+  accountTitle: document.querySelector("#accountTitle"),
   accountForm: document.querySelector("#accountForm"),
+  loginForm: document.querySelector("#loginForm"),
   accountStatus: document.querySelector("#accountStatus"),
+  logoutBtn: document.querySelector("#logoutBtn"),
   sellModal: document.querySelector("#sellModal"),
   sellForm: document.querySelector("#sellForm")
 };
@@ -162,6 +166,19 @@ function loadListings() {
 function saveUserListing(listing) {
   const saved = JSON.parse(localStorage.getItem("congoplace:listings") || "[]");
   localStorage.setItem("congoplace:listings", JSON.stringify([listing, ...saved]));
+}
+
+function loadAccounts() {
+  const savedAccounts = JSON.parse(localStorage.getItem("congoplace:accounts") || "[]");
+  const legacyAccount = JSON.parse(localStorage.getItem("congoplace:account") || "null");
+  if (legacyAccount && !savedAccounts.some((item) => item.email === legacyAccount.email)) {
+    return [...savedAccounts, legacyAccount];
+  }
+  return savedAccounts;
+}
+
+function saveAccounts() {
+  localStorage.setItem("congoplace:accounts", JSON.stringify(accounts));
 }
 
 function formatPrice(value) {
@@ -255,7 +272,8 @@ function renderFavorites() {
 function renderAccount() {
   if (!account) {
     els.accountAvatar.textContent = "?";
-    els.accountName.textContent = "Creer un compte";
+    els.accountName.textContent = "Se connecter";
+    els.logoutBtn.hidden = true;
     return;
   }
 
@@ -263,6 +281,7 @@ function renderAccount() {
   const last = account.lastName.charAt(0) || "";
   els.accountAvatar.textContent = `${first}${last}`.toUpperCase();
   els.accountName.textContent = `${account.firstName} ${account.lastName}`;
+  els.logoutBtn.hidden = false;
 }
 
 function openDetail(id) {
@@ -335,15 +354,27 @@ function createListing(form) {
 
 function createAccount(form) {
   const data = new FormData(form);
+  const email = data.get("email").trim().toLowerCase();
+  const password = data.get("password");
+
+  const existingIndex = accounts.findIndex((item) => item.email.toLowerCase() === email);
+  if (existingIndex >= 0 && accounts[existingIndex].password) {
+    els.accountStatus.textContent = "Un compte existe deja avec cet email.";
+    return;
+  }
+
   account = {
     firstName: data.get("firstName").trim(),
     lastName: data.get("lastName").trim(),
-    email: data.get("email").trim(),
+    email,
     phone: data.get("phone").trim(),
-    city: data.get("city")
+    city: data.get("city"),
+    password
   };
 
-  localStorage.setItem("congoplace:account", JSON.stringify(account));
+  accounts = existingIndex >= 0 ? accounts.map((item, index) => (index === existingIndex ? account : item)) : [...accounts, account];
+  saveAccounts();
+  localStorage.setItem("congoplace:currentAccount", JSON.stringify(account));
   renderAccount();
   els.accountStatus.textContent = "Compte cree avec succes.";
 
@@ -352,6 +383,50 @@ function createAccount(form) {
     els.accountStatus.textContent = "";
     form.reset();
   }, 700);
+}
+
+function loginAccount(form) {
+  const data = new FormData(form);
+  const email = data.get("email").trim().toLowerCase();
+  const password = data.get("password");
+  const found = accounts.find((item) => item.email.toLowerCase() === email && item.password === password);
+
+  if (!found) {
+    els.accountStatus.textContent = "Email ou mot de passe incorrect.";
+    return;
+  }
+
+  account = found;
+  localStorage.setItem("congoplace:currentAccount", JSON.stringify(account));
+  renderAccount();
+  els.accountStatus.textContent = "Connexion reussie.";
+
+  setTimeout(() => {
+    els.accountModal.close();
+    els.accountStatus.textContent = "";
+    form.reset();
+  }, 600);
+}
+
+function logoutAccount() {
+  account = null;
+  localStorage.removeItem("congoplace:currentAccount");
+  renderAccount();
+  els.accountStatus.textContent = "Vous etes deconnecte.";
+  setTimeout(() => {
+    els.accountStatus.textContent = "";
+  }, 900);
+}
+
+function setAccountMode(mode) {
+  const isLogin = mode === "login";
+  els.accountTitle.textContent = isLogin ? "Se connecter" : "Creer un compte";
+  els.loginForm.classList.toggle("is-active", isLogin);
+  els.accountForm.classList.toggle("is-active", !isLogin);
+  document.querySelectorAll("[data-account-mode]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.accountMode === mode);
+  });
+  els.accountStatus.textContent = "";
 }
 
 function selectCategory(category) {
@@ -433,7 +508,13 @@ document.body.addEventListener("click", (event) => {
     startSlider();
   }
   if (event.target.closest("[data-open-sell]")) els.sellModal.showModal();
-  if (event.target.closest("[data-open-account]")) els.accountModal.showModal();
+  if (event.target.closest("[data-open-account]")) {
+    setAccountMode(account ? "login" : "login");
+    els.accountModal.showModal();
+  }
+  if (event.target.closest("[data-account-mode]")) {
+    setAccountMode(event.target.closest("[data-account-mode]").dataset.accountMode);
+  }
   if (event.target.closest("[data-close-detail]")) els.detailModal.close();
   if (event.target.closest("[data-close-sell]")) els.sellModal.close();
   if (event.target.closest("[data-close-account]")) els.accountModal.close();
@@ -451,3 +532,10 @@ els.accountForm.addEventListener("submit", (event) => {
   event.preventDefault();
   createAccount(event.currentTarget);
 });
+
+els.loginForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  loginAccount(event.currentTarget);
+});
+
+els.logoutBtn.addEventListener("click", logoutAccount);

@@ -865,6 +865,47 @@ h2 {
 
 .account-form {
   gap: 13px;
+  display: none;
+  padding-top: 0;
+}
+
+.account-form.is-active {
+  display: grid;
+}
+
+.account-panel {
+  display: grid;
+  gap: 16px;
+  padding-top: 24px;
+}
+
+.account-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 6px;
+  background: #f2f4f7;
+  border-radius: 16px;
+}
+
+.account-tabs button {
+  min-height: 42px;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  font-weight: 850;
+}
+
+.account-tabs button.is-active {
+  color: var(--ink);
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(16, 24, 40, 0.08);
+}
+
+.logout-btn {
+  width: max-content;
+  min-width: 170px;
 }
 
 .terms-check {
